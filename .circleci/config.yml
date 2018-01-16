@@ -1,17 +1,34 @@
 version: 2
 jobs:
-  build:
+  test:
     docker:
       - image: circleci/node:6.10
     steps:
       - checkout
       - restore_cache:
-          key: dependency-cache-{{ checksum "package-lock.json" }}
+          key: dependency-cache-test-{{ checksum "package-lock.json" }}
+      - run:
+          name: install dependencies
+          command: npm install
+      - save_cache:
+          key: dependency-cache-test-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: test
+          command: npm test
+  deploy:
+    docker:
+      - image: circleci/node:6.10
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-deploy-{{ checksum "package-lock.json" }}
       - run:
           name: install dependencies
           command: npm install --only=production
       - save_cache:
-          key: dependency-cache-{{ checksum "package-lock.json" }}
+          key: dependency-cache-deploy-{{ checksum "package-lock.json" }}
           paths:
             - node_modules
       - run:
@@ -23,3 +40,15 @@ jobs:
       - run:
           name: deploy
           command: serverless deploy --stage production --region $SERVERLESS_DEPLOY_REGION
+
+workflows:
+  version: 2
+  test and deploy:
+    jobs:
+      - test
+      - deploy:
+          requires: test
+          filters:
+            branches:
+              only:
+                master
