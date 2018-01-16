@@ -1,0 +1,32 @@
+service: kcmo-trashday
+
+provider:
+  name: aws
+  runtime: nodejs6.10
+
+package:
+  exclude:
+    - node_modules/serverless-prune-plugin/**
+    - .circleci/**
+
+functions:
+  kcmo-trashday:
+    name: kcmo-trashday
+    description: Get the day of the week for residential trash pickup in Kansas City, MO
+    handler: main.lambda
+
+    events:
+      - http:
+          path: /
+          method: get
+          cors: true
+
+# Clean up older versions of the function; keep around
+# the last for rollback, just in case
+custom:
+  prune:
+    automatic: true
+    number: 1
+
+plugins:
+  - serverless-prune-plugin
